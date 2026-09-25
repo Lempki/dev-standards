@@ -1,0 +1,14 @@
+- id: check-prose
+  name: check prose conventions
+  description: Checks Python comments, Python docstrings, and Markdown against the shared prose rules.
+  entry: dev-standards check-prose
+  language: python
+  types_or: [python, markdown]
+
+- id: sync-files
+  name: sync shared configuration files
+  description: Writes the canonical .editorconfig, .ruff-base.toml, and managed .gitattributes and .gitignore blocks.
+  entry: dev-standards sync-files --fix
+  language: python
+  pass_filenames: false
+  always_run: true
