@@ -1,0 +1,87 @@
+# Reusable CI for the Discord bot and API repositories.
+# Callers pick optional jobs through inputs. See the README for an example caller.
+
+name: Python CI
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        description: The Python version used by every job.
+        type: string
+        default: "3.12"
+      mypy:
+        description: Whether to run the typecheck job.
+        type: boolean
+        default: false
+      mypy-target:
+        description: The path mypy checks.
+        type: string
+        default: src
+      docker:
+        description: Whether to build the Docker image.
+        type: boolean
+        default: false
+      lfs:
+        description: Whether to check out Git LFS files.
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: ${{ inputs.lfs }}
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: ${{ inputs.python-version }}
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - run: uvx pre-commit run --all-files --show-diff-on-failure
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: ${{ inputs.lfs }}
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: ${{ inputs.python-version }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run pytest
+
+  typecheck:
+    if: ${{ inputs.mypy }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: ${{ inputs.python-version }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run mypy ${{ inputs.mypy-target }}
+
+  docker:
+    if: ${{ inputs.docker }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: ${{ inputs.lfs }}
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
