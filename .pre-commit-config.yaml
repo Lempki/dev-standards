@@ -1,0 +1,32 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=no]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.9
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  # This repository dogfoods its own hooks from the working tree.
+  - repo: local
+    hooks:
+      - id: sync-files
+        name: sync shared configuration files
+        entry: uv run dev-standards sync-files --fix
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: check-prose
+        name: check prose conventions
+        entry: uv run dev-standards check-prose
+        language: system
+        types_or: [python, markdown]

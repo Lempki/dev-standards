@@ -1,0 +1,4 @@
+extend = ".ruff-base.toml"
+
+[lint.isort]
+known-first-party = ["dev_standards"]
