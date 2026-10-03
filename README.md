@@ -197,7 +197,7 @@ jobs:
 3. In each repository, bump `rev` in `.pre-commit-config.yaml` and the `@v0.x.y` reference in `ci.yml`.
 4. Run `uvx pre-commit run --all-files` so `sync-files` rolls out the new canonical files.
 
-Dependabot bumps the workflow reference automatically.
+Dependabot bumps the workflow reference and the hook revision automatically, in separate pull requests.
 
 ## License
 
