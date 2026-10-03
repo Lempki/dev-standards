@@ -67,7 +67,7 @@ Add this to a repository's `.pre-commit-config.yaml`:
 
 ```yaml
 - repo: https://github.com/Lempki/discord-dev-standards
-  rev: v0.1.2
+  rev: v0.1.3
   hooks:
     - id: sync-files
     - id: check-prose
@@ -98,7 +98,7 @@ The bot and API templates list their shared core files in `.template-manifest.to
 From a derived repository, compare it with its template:
 
 ```bash
-uvx --from git+https://github.com/Lempki/discord-dev-standards@v0.1.2 dev-standards template-check --template ../discord-bot-template --diff
+uvx --from git+https://github.com/Lempki/discord-dev-standards@v0.1.3 dev-standards template-check --template ../discord-bot-template --diff
 ```
 
 Pass `--apply` to overwrite drifted files with the template copy, then review the result with `git diff`.
@@ -119,15 +119,17 @@ on:
 
 jobs:
   ci:
-    uses: Lempki/discord-dev-standards/.github/workflows/python-ci.yml@v0.1.2
+    uses: Lempki/discord-dev-standards/.github/workflows/python-ci.yml@v0.1.3
     with:
       mypy: true
       docker: true
+      forward-python-version: "3.14"
 ```
 
 | Input | Default | Effect |
 |---|---|---|
 | `python-version` | `3.12` | The Python version used by every job. |
+| `forward-python-version` | Empty | Adds a job that runs the tests on this newer Python. It warns about an upgrade's breakage before the upgrade. |
 | `mypy` | `false` | Adds a `typecheck` job that runs mypy on `mypy-target`. |
 | `mypy-target` | `src` | The path mypy checks. |
 | `docker` | `false` | Adds a `docker` job that builds the image without pushing it. |

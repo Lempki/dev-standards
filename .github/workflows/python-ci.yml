@@ -10,6 +10,10 @@ on:
         description: The Python version used by every job.
         type: string
         default: "3.12"
+      forward-python-version:
+        description: A newer Python version that runs the tests once more. Empty skips it.
+        type: string
+        default: ""
       mypy:
         description: Whether to run the typecheck job.
         type: boolean
@@ -55,6 +59,22 @@ jobs:
       - uses: astral-sh/setup-uv@v10.2.0
         with:
           python-version: ${{ inputs.python-version }}
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run pytest
+
+  # The tests run on a newer Python too, so an upgrade's breakage shows up before the upgrade.
+  test-forward:
+    if: ${{ inputs.forward-python-version != '' }}
+    name: test (Python ${{ inputs.forward-python-version }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: ${{ inputs.lfs }}
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: ${{ inputs.forward-python-version }}
           enable-cache: true
       - run: uv sync --frozen
       - run: uv run pytest
