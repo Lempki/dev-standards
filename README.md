@@ -52,6 +52,8 @@ The baseline is PEP 8 as enforced by ruff, with these deliberate choices:
 
 `.ruff-base.toml` encodes these rules.
 Each repository's `ruff.toml` extends it and adds only repository-specific settings.
+Add per-file exceptions under `[lint.extend-per-file-ignores]`.
+A `[lint.per-file-ignores]` table replaces the baseline's table, which drops its exemption of tests from the docstring rules.
 
 ## Commit messages
 
@@ -65,7 +67,7 @@ Add this to a repository's `.pre-commit-config.yaml`:
 
 ```yaml
 - repo: https://github.com/Lempki/discord-dev-standards
-  rev: v0.1.1
+  rev: v0.1.2
   hooks:
     - id: sync-files
     - id: check-prose
@@ -96,7 +98,7 @@ The bot and API templates list their shared core files in `.template-manifest.to
 From a derived repository, compare it with its template:
 
 ```bash
-uvx --from git+https://github.com/Lempki/discord-dev-standards@v0.1.1 dev-standards template-check --template ../discord-bot-template --diff
+uvx --from git+https://github.com/Lempki/discord-dev-standards@v0.1.2 dev-standards template-check --template ../discord-bot-template --diff
 ```
 
 Pass `--apply` to overwrite drifted files with the template copy, then review the result with `git diff`.
@@ -117,7 +119,7 @@ on:
 
 jobs:
   ci:
-    uses: Lempki/discord-dev-standards/.github/workflows/python-ci.yml@v0.1.1
+    uses: Lempki/discord-dev-standards/.github/workflows/python-ci.yml@v0.1.2
     with:
       mypy: true
       docker: true
