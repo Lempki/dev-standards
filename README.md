@@ -13,6 +13,56 @@ Changing a rule means changing it here, tagging a release, and bumping the tag i
 | `dev-standards template-check` | Reports where a derived repository has drifted from the template it was created from. |
 | `python-ci.yml` | A reusable GitHub Actions workflow that lints, tests, type-checks, and builds the Docker image. |
 
+## Language support
+
+The engineering guidelines, the prose rules, the commit conventions, and the template drift check apply to any language.
+The tooling that enforces them supports Python today.
+`check-prose` reads Python comments, Python docstrings, and Markdown, while `.ruff-base.toml`, `python-ci.yml`, and the canonical `.gitignore` block are written for Python.
+A new language adds its own pieces next to these, such as a comment reader in `src/dev_standards/prose/` and its own reusable workflow.
+
+## Engineering guidelines
+
+These guidelines apply to every change, whoever or whatever writes it.
+The Python conventions below translate them into Python specifics.
+
+### Scope and style
+
+* Understand the surrounding code before changing it, and fit into the existing architecture instead of introducing a new one.
+* Keep each change as small as the problem allows. Do not rename, reorganize, or restyle unrelated code in the same change.
+* Prefer the plain solution that states its intent. Clever one-liners, deep nesting, and abstractions without a concrete reason make code harder to read later.
+* A few extra lines are better than a dense expression that the reader has to unpack, but do not pad code just to make it longer.
+* When the existing design makes a change unreasonably hard, say so before widening the scope.
+
+### Comments
+
+* A comment explains why the code is the way it is, not what it visibly does.
+* Good reasons for a comment are a business rule, a constraint, a workaround for external behavior, or an implementation that looks wrong but is intentional.
+* Comments never mention chats, prompts, AI assistants, or how the code was produced.
+* When a better name would make a comment unnecessary, change the name instead.
+
+### Errors and logging
+
+* Catch an exception only when there is something meaningful to do with it, and keep the original error as the cause.
+* Validate external input at trust boundaries, such as requests, files, and environment variables. Inside the code, trust the types.
+* Log what helps diagnose a problem, with enough context to understand the event on its own. Log an error once, at the layer that knows the most about it.
+* Never log, print, or echo secrets, tokens, or credentials.
+
+### Dependencies
+
+* Prefer the standard library or an existing dependency when it does the job clearly.
+* Before adding a package, check its license, its maintenance status, and what it pulls in. A GPL dependency cannot ship in an MIT project, and an unmaintained one becomes a future migration.
+
+### Testing and validation
+
+* Test behavior and contracts, not implementation details.
+* A bug fix comes with a regression test when practical.
+* Never claim that tests, linters, or builds passed unless they actually ran. Say what was not verified.
+
+### Ambiguity
+
+* When an ambiguity changes the outcome, ask.
+* Otherwise choose the least surprising interpretation and state the assumption.
+
 ## Prose rules
 
 These rules apply to comments, docstrings, Markdown, commit message bodies, and user-facing text.
@@ -49,6 +99,11 @@ The baseline is PEP 8 as enforced by ruff, with these deliberate choices:
 * Google-style docstrings on every public module, class, and function.
 * Type annotations on every function signature, including private ones.
 * `pathlib.Path` instead of `os.path`.
+* Specific exceptions only. Keep the cause with `raise NewError(...) from err`, and never silence `Exception`.
+* Keyword-only flags and options, declared after `*`, so a call reads `play(track, loop=True)` instead of `play(track, True)`.
+* mypy's `None` analysis is part of the design. Do not silence it with `# type: ignore` or `cast()` unless an invariant guarantees the type, and return an empty collection instead of `None` when "nothing" is the answer.
+* No blocking I/O or heavy computation directly in async code, because it stalls the event loop. Run it with `asyncio.to_thread`.
+* A regular expression that is not trivial gets a name as a module constant and tests for its edge cases. Use string methods when they are clearer.
 
 `.ruff-base.toml` encodes these rules.
 Each repository's `ruff.toml` extends it and adds only repository-specific settings.
