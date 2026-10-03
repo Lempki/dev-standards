@@ -143,3 +143,27 @@ def test_check_paths_honors_excludes(tmp_path: Path) -> None:
     paths = [tmp_path / "tests" / "t.py", tmp_path / "m.py"]
     violations = check_paths(paths, tmp_path, config)
     assert [v.path.name for v in violations] == ["m.py"]
+
+
+def test_cli_reports_a_clean_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from dev_standards.cli import main
+
+    (tmp_path / "clean.md").write_text("One sentence.\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["check-prose", "clean.md"]) == 0
+    assert capsys.readouterr().out == "Checked 1 file(s). No prose violations.\n"
+
+
+def test_cli_reports_violations_with_a_failing_exit_code(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from dev_standards.cli import main
+
+    (tmp_path / "bad.md").write_text("One; two.\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    assert main(["check-prose", "bad.md"]) == 1
+    assert "1 prose violation(s)." in capsys.readouterr().out

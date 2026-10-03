@@ -29,7 +29,10 @@ def _check_prose(args: argparse.Namespace) -> int:
         print(
             f"\n{len(violations)} prose violation(s). See the discord-dev-standards README."
         )
-    return 1 if violations else 0
+        return 1
+    # pre-commit hides the output of a passing hook, so this line shows only on a direct run.
+    print(f"Checked {len(args.files)} file(s). No prose violations.")
+    return 0
 
 
 def _sync_files(args: argparse.Namespace) -> int:
