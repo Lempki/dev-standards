@@ -143,3 +143,8 @@ jobs:
 4. Run `uvx pre-commit run --all-files` so `sync-files` rolls out the new canonical files.
 
 Dependabot bumps the workflow reference automatically.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+You may use, change, and share it, as long as every copy keeps the copyright notice and the license text.
