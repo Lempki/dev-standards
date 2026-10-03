@@ -1,6 +1,6 @@
-# discord-dev-standards
+# dev-standards
 
-Shared conventions, pre-commit hooks, and CI for the Discord bot and API repositories.
+Shared conventions, pre-commit hooks, and CI that keep a family of repositories consistent.
 Every rule lives here once, and each repository consumes it at a pinned version.
 Changing a rule means changing it here, tagging a release, and bumping the tag in the other repositories.
 
@@ -66,8 +66,8 @@ The body follows the prose rules above, with one sentence per line.
 Add this to a repository's `.pre-commit-config.yaml`:
 
 ```yaml
-- repo: https://github.com/Lempki/discord-dev-standards
-  rev: v0.1.3
+- repo: https://github.com/Lempki/dev-standards
+  rev: v0.2.0
   hooks:
     - id: sync-files
     - id: check-prose
@@ -98,7 +98,7 @@ The bot and API templates list their shared core files in `.template-manifest.to
 From a derived repository, compare it with its template:
 
 ```bash
-uvx --from git+https://github.com/Lempki/discord-dev-standards@v0.1.3 dev-standards template-check --template ../discord-bot-template --diff
+uvx --from git+https://github.com/Lempki/dev-standards@v0.2.0 dev-standards template-check --template ../discord-bot-template --diff
 ```
 
 Pass `--apply` to overwrite drifted files with the template copy, then review the result with `git diff`.
@@ -119,7 +119,7 @@ on:
 
 jobs:
   ci:
-    uses: Lempki/discord-dev-standards/.github/workflows/python-ci.yml@v0.1.3
+    uses: Lempki/dev-standards/.github/workflows/python-ci.yml@v0.2.0
     with:
       mypy: true
       docker: true

@@ -1,4 +1,4 @@
-"""Shared conventions, pre-commit hooks, and CI for the Discord bot and API repositories."""
+"""Shared conventions, pre-commit hooks, and CI that keep a family of repositories consistent."""
 
 from .config import Settings, load_settings
 from .prose import Violation, check_file, check_paths

@@ -1,6 +1,6 @@
-# discord-dev-standards
+# dev-standards
 
-This repository is the single source of the conventions shared by the Discord bot and API repositories.
+This repository is the single source of the conventions shared by the Discord bots, the api-* services, and their templates.
 Read `README.md` first, because it is the rulebook that every other repository points to.
 
 ## Layout

@@ -1,4 +1,4 @@
-# Reusable CI for the Discord bot and API repositories.
+# Reusable CI for the Python repositories that use dev-standards.
 # Callers pick optional jobs through inputs. See the README for an example caller.
 
 name: Python CI

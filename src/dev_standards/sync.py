@@ -13,7 +13,7 @@ from pathlib import Path
 
 __all__ = ["BLOCK_END", "BLOCK_START", "Mode", "Result", "Target", "TARGETS", "sync"]
 
-BLOCK_START = "# >>> dev-standards managed block. Change it in discord-dev-standards."
+BLOCK_START = "# >>> dev-standards managed block. Change it in dev-standards."
 BLOCK_END = "# <<< dev-standards managed block."
 
 
