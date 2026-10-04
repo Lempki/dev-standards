@@ -157,6 +157,7 @@ uvx --from git+https://github.com/Lempki/dev-standards@v0.2.0 dev-standards temp
 ```
 
 Pass `--apply` to overwrite drifted files with the template copy, then review the result with `git diff`.
+Each written file gets the line ending that the canonical `.gitattributes` block gives it, so a `.bat` file keeps CRLF.
 The command exits with 1 while any file has drifted, so it also works as a CI gate.
 
 ## Using the reusable workflow

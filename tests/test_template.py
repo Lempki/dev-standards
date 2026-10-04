@@ -107,3 +107,36 @@ def test_cli_exit_codes(repos: tuple[Path, Path]) -> None:
         main(["template-check", "--template", str(template), "--derived", str(derived)])
         == 0
     )
+
+
+@pytest.mark.parametrize(
+    ("path", "ending"),
+    [
+        ("setup.bat", b"\r\n"),
+        ("tools/build.cmd", b"\r\n"),
+        ("setup.sh", b"\n"),
+        ("scripts/bootstrap.py", b"\n"),
+    ],
+)
+def test_apply_writes_the_line_ending_from_gitattributes(
+    tmp_path: Path, path: str, ending: bytes
+) -> None:
+    template = tmp_path / "template"
+    derived = tmp_path / "derived"
+    write(template / ".template-manifest.toml", f'[[file]]\npath = "{path}"\n')
+    (template / path).parent.mkdir(parents=True, exist_ok=True)
+    (template / path).write_bytes(b"line one\r\nline two\r\n")
+    derived.mkdir()
+
+    check_template(template, derived, apply=True)
+
+    assert (derived / path).read_bytes() == b"line one" + ending + b"line two" + ending
+
+
+def test_crlf_copy_of_an_lf_file_is_identical(repos: tuple[Path, Path]) -> None:
+    template, derived = repos
+    (derived / "utils/db.py").write_bytes(b"DB = 1\r\n")
+
+    assert states(check_template(template, derived, apply=False))["utils/db.py"] is (
+        FileState.IDENTICAL
+    )

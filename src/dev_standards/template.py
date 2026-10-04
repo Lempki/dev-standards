@@ -8,7 +8,9 @@ import difflib
 import tomllib
 from dataclasses import dataclass
 from enum import Enum
-from pathlib import Path
+from fnmatch import fnmatchcase
+from importlib.resources import files
+from pathlib import Path, PurePosixPath
 
 from .config import load_settings
 
@@ -68,6 +70,38 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _line_ending(manifest_path: str) -> str:
+    """Returns the line ending that Git checks a file out with.
+
+    The canonical .gitattributes block decides it, so an applied file looks like a fresh checkout.
+    cmd.exe can misread a batch file with LF line endings, which makes CRLF matter there.
+    As in Git, the last matching line wins.
+    A pattern without a slash matches the file name in any folder.
+
+    Args:
+        manifest_path: The path as written in the manifest, relative to the repository root.
+
+    Returns:
+        CRLF for a path the block marks eol=crlf, otherwise LF.
+    """
+    block = files("dev_standards").joinpath("canonical", "gitattributes.block")
+    ending = "\n"
+    for line in block.read_text(encoding="utf-8").splitlines():
+        fields = line.split()
+        if not fields or fields[0].startswith("#"):
+            continue
+        pattern, attributes = fields[0], fields[1:]
+        if "/" in pattern:
+            matches = fnmatchcase(manifest_path, pattern.lstrip("/"))
+        else:
+            matches = fnmatchcase(PurePosixPath(manifest_path).name, pattern)
+        if matches and "eol=crlf" in attributes:
+            ending = "\r\n"
+        elif matches and "eol=lf" in attributes:
+            ending = "\n"
+    return ending
+
+
 def _manifest_paths(template_root: Path) -> list[str]:
     manifest = template_root / MANIFEST_NAME
     if not manifest.is_file():
@@ -106,6 +140,7 @@ def check_template(
         template_root: The template repository root, which holds the manifest.
         derived_root: The derived repository root.
         apply: Whether to overwrite differing or missing derived files with the template copy.
+            A written file gets the line ending that the canonical .gitattributes block gives it.
 
     Returns:
         One result per manifest entry, in manifest order.
@@ -134,6 +169,8 @@ def check_template(
         if apply and state in (FileState.DIFFERS, FileState.MISSING):
             derived_file.parent.mkdir(parents=True, exist_ok=True)
             derived_file.write_text(
-                _read(template_file), encoding="utf-8", newline="\n"
+                _read(template_file),
+                encoding="utf-8",
+                newline=_line_ending(manifest_path),
             )
     return results
