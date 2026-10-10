@@ -221,10 +221,9 @@ The image carries the version in its `org.opencontainers.image.version` label.
 | `platforms` | `linux/amd64,linux/arm64` | The processors the image runs on. |
 | `lfs` | `false` | Checks out Git LFS files. |
 
-GitHub makes a new package private, even when its repository is public.
-Make the image of a public repository public once, under Package settings on its package page.
-Then any machine can pull it without signing in.
-A machine that pulls a private image signs in with `docker login ghcr.io` and a classic personal access token with the `read:packages` scope.
+The image takes the visibility of its repository.
+So any machine can pull the image of a public repository without signing in.
+A machine that pulls the image of a private repository signs in with `docker login ghcr.io` and a classic personal access token with the `read:packages` scope.
 
 ## Releasing a new version
 
