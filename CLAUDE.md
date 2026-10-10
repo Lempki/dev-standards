@@ -8,7 +8,8 @@ Read `README.md` first, because it is the rulebook that every other repository p
 * `src/dev_standards/prose/` holds the check-prose hook. `rules.py` has the rules, and the other modules turn Python or Markdown into paragraphs.
 * `src/dev_standards/sync.py` and `src/dev_standards/canonical/` hold the sync-files hook and the canonical files it writes.
 * `src/dev_standards/template.py` holds the template-check command.
-* `.github/workflows/python-ci.yml` is the reusable workflow that every repository calls.
+* `.github/workflows/python-ci.yml` is the reusable CI workflow that every repository calls.
+* `.github/workflows/docker-publish.yml` is the reusable workflow that publishes a release's Docker image.
 
 ## Working here
 

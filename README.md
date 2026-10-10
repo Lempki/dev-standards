@@ -12,6 +12,7 @@ Changing a rule means changing it here, tagging a release, and bumping the tag i
 | `sync-files` hook | Keeps `.editorconfig`, `.ruff-base.toml`, and managed blocks in `.gitattributes` and `.gitignore` identical everywhere. |
 | `dev-standards template-check` | Reports where a derived repository has drifted from the template it was created from. |
 | `python-ci.yml` | A reusable GitHub Actions workflow that lints, tests, type-checks, and builds the Docker image. |
+| `docker-publish.yml` | A reusable GitHub Actions workflow that publishes a release's Docker image to the GitHub Container Registry. |
 
 ## Language support
 
@@ -122,7 +123,7 @@ Add this to a repository's `.pre-commit-config.yaml`:
 
 ```yaml
 - repo: https://github.com/Lempki/dev-standards
-  rev: v0.2.1
+  rev: v0.3.0
   hooks:
     - id: sync-files
     - id: check-prose
@@ -153,7 +154,7 @@ The bot and API templates list their shared core files in `.template-manifest.to
 From a derived repository, compare it with its template:
 
 ```bash
-uvx --from git+https://github.com/Lempki/dev-standards@v0.2.1 dev-standards template-check --template ../discord-bot-template --diff
+uvx --from git+https://github.com/Lempki/dev-standards@v0.3.0 dev-standards template-check --template ../discord-bot-template --diff
 ```
 
 Pass `--apply` to overwrite drifted files with the template copy, then review the result with `git diff`.
@@ -175,7 +176,7 @@ on:
 
 jobs:
   ci:
-    uses: Lempki/dev-standards/.github/workflows/python-ci.yml@v0.2.1
+    uses: Lempki/dev-standards/.github/workflows/python-ci.yml@v0.3.0
     with:
       mypy: true
       docker: true
@@ -191,11 +192,45 @@ jobs:
 | `docker` | `false` | Adds a `docker` job that builds the image without pushing it. |
 | `lfs` | `false` | Checks out Git LFS files. Leave it off unless tests need real assets. |
 
+## Publishing Docker images
+
+A repository's `.github/workflows/release.yml` publishes the image of every version tag:
+
+```yaml
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  image:
+    uses: Lempki/dev-standards/.github/workflows/docker-publish.yml@v0.3.0
+    permissions:
+      contents: read
+      packages: write
+```
+
+The image is named after the repository, such as `ghcr.io/lempki/api-media`.
+Tag `v1.2.0` publishes the tags `1.2.0`, `1.2`, and `latest`.
+A machine that runs the release pulls `latest`, so it gets the newest release without knowing its number.
+The image carries the version in its `org.opencontainers.image.version` label.
+
+| Input | Default | Effect |
+|---|---|---|
+| `platforms` | `linux/amd64,linux/arm64` | The processors the image runs on. |
+| `lfs` | `false` | Checks out Git LFS files. |
+
+GitHub makes a new package private, even when its repository is public.
+Make the image of a public repository public once, under Package settings on its package page.
+Then any machine can pull it without signing in.
+A machine that pulls a private image signs in with `docker login ghcr.io` and a classic personal access token with the `read:packages` scope.
+
 ## Releasing a new version
 
 1. Change the rules, canonical files, or workflow here, with tests.
 2. Bump `version` in `pyproject.toml` and tag the commit, for example `v0.2.0`.
-3. In each repository, bump `rev` in `.pre-commit-config.yaml` and the `@v0.x.y` reference in `ci.yml`.
+3. In each repository, bump `rev` in `.pre-commit-config.yaml` and the `@v0.x.y` references in `ci.yml` and `release.yml`.
 4. Run `uvx pre-commit run --all-files` so `sync-files` rolls out the new canonical files.
 
 Dependabot bumps the workflow reference and the hook revision automatically, in separate pull requests.
