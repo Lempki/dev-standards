@@ -1,6 +1,6 @@
 # Shared editor settings for every repository that uses dev-standards.
 # This file is managed by dev-standards. Change it there, not here.
-# EditorConfig covers whitespace and encoding only. Ruff and the check-prose hook cover the rest.
+# EditorConfig covers whitespace and encoding only. Ruff, luacheck, and the check-prose hook cover the rest.
 
 root = true
 
@@ -15,6 +15,10 @@ indent_size = 4
 
 [*.{yml,yaml,json}]
 indent_size = 2
+
+[*.lua]
+# Darktide and its mod framework indent their Lua with tabs, so mod code matches the code it hooks.
+indent_style = tab
 
 [*.{bat,cmd}]
 # The Windows command interpreter misreads some scripts saved with LF endings.
