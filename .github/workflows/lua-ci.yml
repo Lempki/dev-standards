@@ -1,0 +1,59 @@
+# Reusable CI for the Lua repositories that use dev-standards.
+# It runs the shared pre-commit hooks, luacheck with the repository's .luacheckrc, and the repository's own tests under LuaJIT.
+# See the README for an example caller.
+
+name: Lua CI
+
+on:
+  workflow_call:
+    inputs:
+      test-command:
+        description: The command that runs the tests under LuaJIT. Empty skips the test job.
+        type: string
+        default: luajit tests/run.lua
+      luacheck-paths:
+        description: The paths luacheck checks.
+        type: string
+        default: .
+      lfs:
+        description: Whether to check out Git LFS files.
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: ${{ inputs.lfs }}
+      # pre-commit runs on Python, and the shared hooks are a Python package.
+      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - run: uvx pre-commit run --all-files --show-diff-on-failure
+
+  luacheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: ${{ inputs.lfs }}
+      - run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends lua-check
+      - run: luacheck ${{ inputs.luacheck-paths }}
+
+  # Ubuntu's LuaJIT is 2.1, the version game engines such as Darktide's embed.
+  test:
+    if: ${{ inputs.test-command != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: ${{ inputs.lfs }}
+      - run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends luajit
+      - run: ${{ inputs.test-command }}
