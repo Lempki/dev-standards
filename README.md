@@ -8,17 +8,25 @@ Changing a rule means changing it here, tagging a release, and bumping the tag i
 
 | Piece | Purpose |
 |---|---|
-| `check-prose` hook | Enforces the prose rules on Python comments, Python docstrings, and Markdown. |
+| `check-prose` hook | Enforces the prose rules on Python comments, Python docstrings, Lua comments, and Markdown. |
 | `sync-files` hook | Keeps `.editorconfig`, `.ruff-base.toml`, and managed blocks in `.gitattributes` and `.gitignore` identical everywhere. |
 | `dev-standards template-check` | Reports where a derived repository has drifted from the template it was created from. |
 | `python-ci.yml` | A reusable GitHub Actions workflow that lints, tests, type-checks, and builds the Docker image. |
+| `lua-ci.yml` | A reusable GitHub Actions workflow that runs the hooks, luacheck, and the tests under LuaJIT. |
 | `docker-publish.yml` | A reusable GitHub Actions workflow that publishes a release's Docker image to the GitHub Container Registry. |
 
 ## Language support
 
 The engineering guidelines, the prose rules, the commit conventions, and the template drift check apply to any language.
-The tooling that enforces them supports Python today.
-`check-prose` reads Python comments, Python docstrings, and Markdown, while `.ruff-base.toml`, `python-ci.yml`, and the canonical `.gitignore` block are written for Python.
+The tooling that enforces them supports Python and Lua.
+
+| Language | Prose | Formatting and linting | Reusable workflow |
+|---|---|---|---|
+| Python | Comments and docstrings | `.ruff-base.toml` | `python-ci.yml` |
+| Lua | Line comments and block comments | The canonical `.editorconfig` and each repository's `.luacheckrc` | `lua-ci.yml` |
+
+`check-prose` also reads Markdown in every repository.
+`sync-files` writes `.ruff-base.toml` everywhere, so a Lua repository skips it in its settings.
 A new language adds its own pieces next to these, such as a comment reader in `src/dev_standards/prose/` and its own reusable workflow.
 
 ## Engineering guidelines
@@ -87,7 +95,12 @@ Code spans, URLs, and link targets are removed before checking, so `a; b` in bac
 Pragma comments such as `# noqa` or `# type: ignore` are never treated as prose.
 Doctest examples, fenced code, literal blocks after `::`, and `Examples:` or `Usage:` sections in docstrings are skipped.
 
-To exempt a single deliberate exception, add `prose: ignore` to the Python comment or docstring line.
+In Lua, `-- luacheck:` options and annotations such as `---@param` are not prose either.
+A line between two rule lines, such as `-- Public API` between `-- ####` lines, is a section heading.
+Lua block comments are split on blank lines, like docstrings, and strings never count as comments.
+
+To exempt a single deliberate exception, add `prose: ignore` to the Python comment or docstring line, or to the Lua comment line.
+To skip a whole Lua block comment, such as commented-out code, put `prose: ignore` on its opening line.
 In Markdown, put `<!-- prose: ignore -->` on the line before the paragraph.
 
 ## Python conventions
@@ -111,6 +124,17 @@ Each repository's `ruff.toml` extends it and adds only repository-specific setti
 Add per-file exceptions under `[lint.extend-per-file-ignores]`.
 A `[lint.per-file-ignores]` table replaces the baseline's table, which drops its exemption of tests from the docstring rules.
 
+## Lua conventions
+
+The baseline is LuaJIT 2.1, the Lua that game engines such as Darktide's embed, checked by luacheck, with these deliberate choices:
+
+* Indent with tabs, as the canonical `.editorconfig` sets, because the game and its mod framework do.
+* `std = "luajit"` in `.luacheckrc`, with the host's globals listed as `read_globals`, so a typo in a global name fails the check.
+* Every variable and function is `local`, and each module returns one table.
+* Code that runs in a host's shared Lua state, such as a game mod, prefixes every name it adds there, including ffi declarations, so it cannot collide with another mod.
+* Specs run under plain LuaJIT with a small runner and fakes for the host, so they need no third-party packages.
+* A setting or option a player can change is read where it is used, so a change applies without a restart.
+
 ## Commit messages
 
 Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) with a scope where one fits.
@@ -132,12 +156,15 @@ Add this to a repository's `.pre-commit-config.yaml`:
 Install the hooks once per clone with `uvx pre-commit install`.
 Run them on demand with `uvx pre-commit run --all-files`.
 
-Settings go in the repository's `pyproject.toml`:
+Settings go in the repository's `pyproject.toml`.
+A repository without one, such as a Lua repository, puts the same tables in a `dev-standards.toml` at its root, without the `tool.dev-standards.` prefix.
+Settings in both files are an error.
 
 ```toml
 [tool.dev-standards.prose]
 exclude = ["tests/**"]        # Glob patterns that are never checked.
 python-max-em-dashes = 0      # Per comment block or docstring paragraph.
+lua-max-em-dashes = 0         # Per Lua comment block or block comment paragraph.
 markdown-max-em-dashes = 1    # Per Markdown paragraph or list item.
 
 [tool.dev-standards.sync]
@@ -146,6 +173,16 @@ skip = [".gitignore"]         # Canonical files this repository opts out of.
 [tool.dev-standards.template]
 package = "media_api"         # Replaces {package} in template manifest paths.
 ignore = ["cogs/help.py"]     # Manifest paths this repository deliberately diverges on.
+```
+
+The same settings for a Lua repository, in `dev-standards.toml`:
+
+```toml
+[prose]
+exclude = ["vendor/**"]
+
+[sync]
+skip = [".ruff-base.toml"]
 ```
 
 ## Checking template drift
@@ -191,6 +228,24 @@ jobs:
 | `mypy-target` | `src` | The path mypy checks. |
 | `docker` | `false` | Adds a `docker` job that builds the image without pushing it. |
 | `lfs` | `false` | Checks out Git LFS files. Leave it off unless tests need real assets. |
+
+A Lua repository calls `lua-ci.yml` instead:
+
+```yaml
+jobs:
+  ci:
+    uses: Lempki/dev-standards/.github/workflows/lua-ci.yml@v0.4.0
+    with:
+      test-command: luajit tests/run.lua
+```
+
+| Input | Default | Effect |
+|---|---|---|
+| `test-command` | `luajit tests/run.lua` | The command that runs the tests under LuaJIT 2.1. Empty skips the `test` job. |
+| `luacheck-paths` | `.` | The paths luacheck checks, with the repository's `.luacheckrc`. |
+| `lfs` | `false` | Checks out Git LFS files. |
+
+The `lint` job runs the repository's pre-commit hooks, as in `python-ci.yml`.
 
 ## Publishing Docker images
 

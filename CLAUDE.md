@@ -5,10 +5,11 @@ Read `README.md` first, because it is the rulebook that every other repository p
 
 ## Layout
 
-* `src/dev_standards/prose/` holds the check-prose hook. `rules.py` has the rules, and the other modules turn Python or Markdown into paragraphs.
+* `src/dev_standards/prose/` holds the check-prose hook. `rules.py` has the rules, `blocks.py` splits docstrings and block comments, and the other modules turn Python, Lua, or Markdown into paragraphs.
+* `src/dev_standards/config.py` reads the settings from `pyproject.toml`, or from `dev-standards.toml` in a repository without one.
 * `src/dev_standards/sync.py` and `src/dev_standards/canonical/` hold the sync-files hook and the canonical files it writes.
 * `src/dev_standards/template.py` holds the template-check command.
-* `.github/workflows/python-ci.yml` is the reusable CI workflow that every repository calls.
+* `.github/workflows/python-ci.yml` and `.github/workflows/lua-ci.yml` are the reusable CI workflows the Python and Lua repositories call.
 * `.github/workflows/docker-publish.yml` is the reusable workflow that publishes a release's Docker image.
 
 ## Working here
