@@ -33,7 +33,7 @@ jobs:
         with:
           lfs: ${{ inputs.lfs }}
       # pre-commit runs on Python, and the shared hooks are a Python package.
-      - uses: astral-sh/setup-uv@v10.2.0
+      - uses: astral-sh/setup-uv@v10.3.0
       - uses: actions/cache@v6
         with:
           path: ~/.cache/pre-commit
