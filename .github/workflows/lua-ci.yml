@@ -1,6 +1,8 @@
 # Reusable CI for the Lua repositories that use dev-standards.
 # It runs the shared pre-commit hooks, luacheck with the repository's .luacheckrc, and the repository's own tests under LuaJIT.
 # See the README for an example caller.
+# Every job runs on a fixed Ubuntu release, since luacheck and LuaJIT come from its packages.
+# Moving to a newer release is a deliberate change here, not a surprise when ubuntu-latest moves.
 
 name: Lua CI
 
@@ -25,7 +27,7 @@ permissions:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
         with:
@@ -39,7 +41,7 @@ jobs:
       - run: uvx pre-commit run --all-files --show-diff-on-failure
 
   luacheck:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
         with:
@@ -50,7 +52,7 @@ jobs:
   # Ubuntu's LuaJIT is 2.1, the version game engines such as Darktide's embed.
   test:
     if: ${{ inputs.test-command != '' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
         with:
