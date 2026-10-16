@@ -5,18 +5,14 @@ import io
 import re
 import tokenize
 
+from .blocks import BANNER, IGNORE_MARKER, split_block
 from .rules import Paragraph, ProseLine
 
 __all__ = ["IGNORE_MARKER", "extract_paragraphs"]
 
-IGNORE_MARKER = "prose: ignore"
-
 _PRAGMA = re.compile(
     r"^(noqa\b|type:|fmt:|pragma\b|pyright:|mypy:|ruff:|isort:|pylint:|-\*-|nosec\b)"
 )
-_BANNER = re.compile(r"^[-=#*~_ ]*$|^[-=]{2,}\s.*\s[-=]{2,}$")
-_FENCE = re.compile(r"^(`{3,}|~{3,})")
-_CODE_SECTION = re.compile(r"^(Examples?|Usage):$")
 
 
 def _comment_text(token: tokenize.TokenInfo) -> str | None:
@@ -26,7 +22,7 @@ def _comment_text(token: tokenize.TokenInfo) -> str | None:
     if token.start[0] == 1 and text.startswith("!"):
         return None
     stripped = text.strip()
-    if _PRAGMA.match(stripped) or _BANNER.match(stripped):
+    if _PRAGMA.match(stripped) or BANNER.match(stripped):
         return None
     # A single word is a section label such as "# warnings", not a sentence.
     if len(stripped.split()) == 1:
@@ -90,49 +86,10 @@ def _docstring_nodes(tree: ast.Module) -> list[ast.Constant]:
     return nodes
 
 
-def _indent(text: str) -> int:
-    return len(text) - len(text.lstrip())
-
-
 def _docstring_paragraphs(node: ast.Constant) -> list[Paragraph]:
     """Splits one docstring into paragraphs, skipping code examples."""
     assert isinstance(node.value, str)
-    paragraphs: list[Paragraph] = []
-    current: Paragraph = []
-    in_fence = False
-    in_doctest = False
-    skip_below: int | None = None
-    for offset, raw in enumerate(node.value.splitlines()):
-        text = raw.strip()
-        indent = _indent(raw)
-        if skip_below is not None:
-            if not text or indent > skip_below:
-                continue
-            skip_below = None
-        if _FENCE.match(text):
-            in_fence = not in_fence
-            continue
-        # A doctest example and its expected output run until the next blank line.
-        if text.startswith(">>>"):
-            in_doctest = True
-        if in_doctest and text:
-            continue
-        in_doctest = False
-        if in_fence:
-            continue
-        if not text or IGNORE_MARKER in text:
-            if current:
-                paragraphs.append(current)
-            current = []
-            continue
-        current.append(ProseLine(node.lineno + offset, text))
-        if text.endswith("::") or _CODE_SECTION.match(text):
-            skip_below = indent
-            paragraphs.append(current)
-            current = []
-    if current:
-        paragraphs.append(current)
-    return paragraphs
+    return split_block(node.value, node.lineno)
 
 
 def extract_paragraphs(source: str) -> list[Paragraph]:
