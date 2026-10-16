@@ -11,7 +11,7 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from .config import ConfigError, load_settings
+from .config import ConfigError, load_settings, repository_languages
 from .prose import check_paths
 from .sync import Result, sync
 from .template import FileState, ManifestError, check_template
@@ -35,8 +35,9 @@ def _check_prose(args: argparse.Namespace) -> int:
 
 def _sync_files(args: argparse.Namespace) -> int:
     root = Path.cwd()
-    skip = load_settings(root).sync.skip
-    results = sync(root, fix=args.fix, skip=skip)
+    settings = load_settings(root)
+    languages = repository_languages(root, settings)
+    results = sync(root, fix=args.fix, languages=languages, skip=settings.sync.skip)
     failed = False
     for path, result in results.items():
         if result in (Result.CHANGED, Result.OUTDATED):

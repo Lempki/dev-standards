@@ -9,7 +9,7 @@ Changing a rule means changing it here, tagging a release, and bumping the tag i
 | Piece | Purpose |
 |---|---|
 | `check-prose` hook | Enforces the prose rules on Python comments, Python docstrings, Lua comments, and Markdown. |
-| `sync-files` hook | Keeps `.editorconfig`, `.ruff-base.toml`, and managed blocks in `.gitattributes` and `.gitignore` identical everywhere. |
+| `sync-files` hook | Keeps managed blocks in `.editorconfig`, `.gitattributes`, and `.gitignore`, and the whole `.ruff-base.toml`, identical in every repository of the same languages. |
 | `dev-standards template-check` | Reports where a derived repository has drifted from the template it was created from. |
 | `python-ci.yml` | A reusable GitHub Actions workflow that lints, tests, type-checks, and builds the Docker image. |
 | `lua-ci.yml` | A reusable GitHub Actions workflow that runs the hooks, luacheck, and the tests under LuaJIT. |
@@ -26,8 +26,14 @@ The tooling that enforces them supports Python and Lua.
 | Lua | Line comments and block comments | The canonical `.editorconfig` and each repository's `.luacheckrc` | `lua-ci.yml` |
 
 `check-prose` also reads Markdown in every repository.
-`sync-files` writes `.ruff-base.toml` everywhere, so a Lua repository skips it in its settings.
-A new language adds its own pieces next to these, such as a comment reader in `src/dev_standards/prose/` and its own reusable workflow.
+`sync-files` builds each shared file from a part that every repository gets and a part per language, and a repository gets only the parts of its languages.
+A Python repository therefore gets `.ruff-base.toml` and the Python entries of `.gitignore`, and a Lua repository gets the tab rule for `.lua` files instead.
+
+A repository's languages come from `languages` in its settings.
+Without that setting, a marker file at the repository root tells them: `pyproject.toml` for Python and `.luacheckrc` for Lua.
+A repository with neither must declare its languages, and a repository without code declares `languages = []`.
+
+A new language adds its own pieces next to these: a comment reader in `src/dev_standards/prose/`, its canonical parts and marker file in `sync.py` and `config.py`, and its own reusable workflow.
 
 ## Engineering guidelines
 
@@ -156,11 +162,14 @@ Add this to a repository's `.pre-commit-config.yaml`:
 Install the hooks once per clone with `uvx pre-commit install`.
 Run them on demand with `uvx pre-commit run --all-files`.
 
-Settings go in the repository's `pyproject.toml`.
-A repository without one, such as a Lua repository, puts the same tables in a `dev-standards.toml` at its root, without the `tool.dev-standards.` prefix.
+Settings go in the `[tool.dev-standards]` table of the repository's `pyproject.toml`.
+A repository without one, such as a Lua repository, puts the same settings in a `dev-standards.toml` at its root, without the `tool.dev-standards.` prefix.
 Settings in both files are an error.
 
 ```toml
+[tool.dev-standards]
+languages = ["python"]       # Only needed when no marker file tells them. See Language support.
+
 [tool.dev-standards.prose]
 exclude = ["tests/**"]        # Glob patterns that are never checked.
 python-max-em-dashes = 0      # Per comment block or docstring paragraph.
@@ -168,7 +177,7 @@ lua-max-em-dashes = 0         # Per Lua comment block or block comment paragraph
 markdown-max-em-dashes = 1    # Per Markdown paragraph or list item.
 
 [tool.dev-standards.sync]
-skip = [".gitignore"]         # Canonical files this repository opts out of.
+skip = [".gitattributes"]     # Shared files this repository opts out of.
 
 [tool.dev-standards.template]
 package = "media_api"         # Replaces {package} in template manifest paths.
@@ -178,12 +187,25 @@ ignore = ["cogs/help.py"]     # Manifest paths this repository deliberately dive
 The same settings for a Lua repository, in `dev-standards.toml`:
 
 ```toml
+languages = ["lua"]           # Only needed without a .luacheckrc.
+
 [prose]
 exclude = ["vendor/**"]
-
-[sync]
-skip = [".ruff-base.toml"]
 ```
+
+The managed block in `.gitignore`, `.gitattributes`, and `.editorconfig` belongs to dev-standards, and the lines outside it belong to the repository.
+A repository adds its own entries below the block, such as an `.editorconfig` section for its PowerShell scripts:
+
+```ini
+# <<< dev-standards managed block.
+
+[*.ps1]
+# Windows PowerShell 5.1 reads UTF-8 without a BOM as ANSI.
+charset = utf-8-bom
+```
+
+An `.editorconfig` section of the repository's own goes below the block, because the block starts with `root = true`, which must come before every section.
+An `.editorconfig` that an older version wrote as a whole managed file is replaced by the block on the first run.
 
 ## Checking template drift
 

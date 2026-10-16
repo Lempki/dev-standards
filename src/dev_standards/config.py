@@ -1,4 +1,4 @@
-"""Reads a repository's dev-standards settings.
+"""Reads a repository's dev-standards settings and tells which languages it uses.
 
 A Python repository keeps them in the [tool.dev-standards] table of its pyproject.toml.
 A repository without a pyproject.toml, such as a Lua one, uses dev-standards.toml instead.
@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any
 
 __all__ = [
+    "LANGUAGE_MARKERS",
+    "LANGUAGES",
     "ConfigError",
     "ProseConfig",
     "Settings",
@@ -17,9 +19,16 @@ __all__ = [
     "SETTINGS_FILE",
     "TemplateConfig",
     "load_settings",
+    "repository_languages",
 ]
 
 SETTINGS_FILE = "dev-standards.toml"
+
+# The languages that dev-standards has canonical files for.
+LANGUAGES = ("python", "lua")
+
+# A file at the repository root that shows that the repository uses a language.
+LANGUAGE_MARKERS = {"python": "pyproject.toml", "lua": ".luacheckrc"}
 
 
 class ConfigError(Exception):
@@ -69,8 +78,16 @@ class TemplateConfig:
 
 @dataclass(frozen=True)
 class Settings:
-    """All dev-standards settings of one repository."""
+    """All dev-standards settings of one repository.
 
+    Attributes:
+        languages: The languages that the repository declares, or None to detect them.
+        prose: The check-prose settings.
+        sync: The sync-files settings.
+        template: The template-check settings.
+    """
+
+    languages: tuple[str, ...] | None = None
     prose: ProseConfig = field(default_factory=ProseConfig)
     sync: SyncConfig = field(default_factory=SyncConfig)
     template: TemplateConfig = field(default_factory=TemplateConfig)
@@ -123,6 +140,15 @@ def load_settings(root: Path) -> Settings:
         ConfigError: If a known key holds a value of the wrong type, or both files hold settings.
     """
     table = _load_table(root)
+    languages = None
+    if "languages" in table:
+        languages = _strings(table, "languages")
+        unknown = sorted(set(languages) - set(LANGUAGES))
+        if unknown:
+            raise ConfigError(
+                f"Unknown language(s): {', '.join(unknown)}. "
+                f"dev-standards knows {', '.join(LANGUAGES)}."
+            )
     prose = table.get("prose", {})
     sync = table.get("sync", {})
     template = table.get("template", {})
@@ -130,6 +156,7 @@ def load_settings(root: Path) -> Settings:
     if package is not None and not isinstance(package, str):
         raise ConfigError("'package' must be a string.")
     return Settings(
+        languages=languages,
         prose=ProseConfig(
             exclude=_strings(prose, "exclude"),
             python_max_em_dashes=_int(prose, "python-max-em-dashes", 0),
@@ -139,3 +166,37 @@ def load_settings(root: Path) -> Settings:
         sync=SyncConfig(skip=_strings(sync, "skip")),
         template=TemplateConfig(package=package, ignore=_strings(template, "ignore")),
     )
+
+
+def repository_languages(root: Path, settings: Settings) -> tuple[str, ...]:
+    """Returns the languages of the repository at root, as declared or detected.
+
+    A declared list wins, even an empty one for a repository without code.
+    Otherwise each language whose marker file is at the root counts.
+
+    Args:
+        root: The repository root directory.
+        settings: The repository's settings, which may declare the languages.
+
+    Returns:
+        The languages, in the order of LANGUAGES when detected.
+
+    Raises:
+        ConfigError: If nothing is declared and no marker file is found.
+    """
+    if settings.languages is not None:
+        return settings.languages
+    found = tuple(
+        language
+        for language in LANGUAGES
+        if (root / LANGUAGE_MARKERS[language]).is_file()
+    )
+    if not found:
+        markers = ", ".join(
+            f"{name} for {lang}" for lang, name in LANGUAGE_MARKERS.items()
+        )
+        raise ConfigError(
+            f"Cannot tell this repository's languages from its files ({markers}). "
+            f'Declare them in {SETTINGS_FILE}, such as languages = ["lua"].'
+        )
+    return found
