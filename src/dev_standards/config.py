@@ -1,4 +1,8 @@
-"""Reads the [tool.dev-standards] table from a repository's pyproject.toml."""
+"""Reads a repository's dev-standards settings.
+
+A Python repository keeps them in the [tool.dev-standards] table of its pyproject.toml.
+A repository without a pyproject.toml, such as a Lua one, uses dev-standards.toml instead.
+"""
 
 import tomllib
 from dataclasses import dataclass, field
@@ -10,9 +14,12 @@ __all__ = [
     "ProseConfig",
     "Settings",
     "SyncConfig",
+    "SETTINGS_FILE",
     "TemplateConfig",
     "load_settings",
 ]
+
+SETTINGS_FILE = "dev-standards.toml"
 
 
 class ConfigError(Exception):
@@ -83,10 +90,28 @@ def _int(table: dict[str, Any], key: str, default: int) -> int:
     return value
 
 
+def _load_table(root: Path) -> dict[str, Any]:
+    """Returns the settings table from pyproject.toml or dev-standards.toml, or an empty one."""
+    table: dict[str, Any] | None = None
+    pyproject = root / "pyproject.toml"
+    if pyproject.is_file():
+        with pyproject.open("rb") as file:
+            table = tomllib.load(file).get("tool", {}).get("dev-standards")
+    standalone = root / SETTINGS_FILE
+    if standalone.is_file():
+        if table is not None:
+            raise ConfigError(
+                f"Settings are in both pyproject.toml and {SETTINGS_FILE}. Keep one."
+            )
+        with standalone.open("rb") as file:
+            table = tomllib.load(file)
+    return table or {}
+
+
 def load_settings(root: Path) -> Settings:
     """Loads the dev-standards settings of the repository at root.
 
-    A missing pyproject.toml or a missing table yields the defaults.
+    No settings file, or no table in pyproject.toml, yields the defaults.
 
     Args:
         root: The repository root directory.
@@ -95,14 +120,9 @@ def load_settings(root: Path) -> Settings:
         The parsed settings.
 
     Raises:
-        ConfigError: If a known key holds a value of the wrong type.
+        ConfigError: If a known key holds a value of the wrong type, or both files hold settings.
     """
-    pyproject = root / "pyproject.toml"
-    if not pyproject.is_file():
-        return Settings()
-    with pyproject.open("rb") as file:
-        data = tomllib.load(file)
-    table = data.get("tool", {}).get("dev-standards", {})
+    table = _load_table(root)
     prose = table.get("prose", {})
     sync = table.get("sync", {})
     template = table.get("template", {})
