@@ -26,11 +26,13 @@ class ProseConfig:
     Attributes:
         exclude: Glob patterns, relative to the repository root, that are never checked.
         python_max_em_dashes: Em dashes allowed per comment block or docstring paragraph.
+        lua_max_em_dashes: Em dashes allowed per Lua comment block or block comment paragraph.
         markdown_max_em_dashes: Em dashes allowed per Markdown paragraph or list item.
     """
 
     exclude: tuple[str, ...] = ()
     python_max_em_dashes: int = 0
+    lua_max_em_dashes: int = 0
     markdown_max_em_dashes: int = 1
 
 
@@ -111,6 +113,7 @@ def load_settings(root: Path) -> Settings:
         prose=ProseConfig(
             exclude=_strings(prose, "exclude"),
             python_max_em_dashes=_int(prose, "python-max-em-dashes", 0),
+            lua_max_em_dashes=_int(prose, "lua-max-em-dashes", 0),
             markdown_max_em_dashes=_int(prose, "markdown-max-em-dashes", 1),
         ),
         sync=SyncConfig(skip=_strings(sync, "skip")),

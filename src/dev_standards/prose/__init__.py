@@ -1,13 +1,13 @@
 """The check-prose hook.
 
-Enforces the prose rules on Python comments, Python docstrings, and Markdown.
+Enforces the prose rules on Python comments, Python docstrings, Lua comments, and Markdown.
 """
 
 from fnmatch import fnmatch
 from pathlib import Path
 
 from ..config import ProseConfig
-from . import markdown, python_source
+from . import lua_source, markdown, python_source
 from .rules import Violation, check_paragraph
 
 __all__ = ["Violation", "check_file", "check_paths"]
@@ -29,6 +29,9 @@ def check_file(path: Path, source: str, config: ProseConfig) -> list[Violation]:
     if path.suffix == ".py":
         paragraphs = python_source.extract_paragraphs(source)
         limit = config.python_max_em_dashes
+    elif path.suffix == ".lua":
+        paragraphs = lua_source.extract_paragraphs(source)
+        limit = config.lua_max_em_dashes
     elif path.suffix in _MARKDOWN_SUFFIXES:
         paragraphs = markdown.extract_paragraphs(source)
         limit = config.markdown_max_em_dashes

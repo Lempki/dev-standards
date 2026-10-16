@@ -104,6 +104,65 @@ def test_unparsable_python_is_skipped() -> None:
 @pytest.mark.parametrize(
     ("source", "expected"),
     [
+        ("-- A full sentence.\n", []),
+        ("-- Missing the period\n", [(1, "P004")]),
+        ("-- First half of a sentence\n-- second half.\n", [(1, "P003")]),
+        ("-- One sentence.\n-- Another sentence.\n", []),
+        ("-- This part; that part.\n", [(1, "P001")]),
+        ("-- Uses a dash — here.\n", [(1, "P002")]),
+        ("--\tA tab after the dashes.\n", []),
+        ("--- An LDoc summary.\n", []),
+        ("---@param name string\n", []),
+        ("-- luacheck: ignore 542\n", []),
+        ("-- ####\n-- Section\n-- ####\n", []),
+        ("-- ####\n-- Public API\n-- ####\n", []),
+        ("-- ####\n-- Two words\n-- ####\n-- Prose under the rules\n", [(4, "P004")]),
+        ("-- ####\n-- Not a heading without a closing rule\n", [(2, "P004")]),
+        ("-- --- Settings ---\n", []),
+        ("--------------\n", []),
+        ("-- helpers\n", []),
+        ("-- Deliberate fragment prose: ignore\n", []),
+        ("local x = 1 -- trailing comment\n", [(1, "P004")]),
+        ("local x = 1 -- Trailing sentence.\n", []),
+        ("#!/usr/bin/env luajit\n-- A sentence.\n", []),
+        ('local s = "-- not a comment"\n', []),
+        ("local s = 'it\\'s -- not a comment'\n", []),
+        ("local s = [[\n-- not a comment\n]]\n", []),
+        ("local s = [==[\n]] -- still a string\n]==]\n", []),
+        ("local t = a[b[1]] -- Indexing is not a long string.\n", []),
+        ("--[[ A block comment. ]]\n", []),
+        ("--[[\nA block that wraps\nonto a second line.\n]]\n", [(2, "P003")]),
+        ("--[[\nFirst paragraph.\n\nSecond paragraph\n--]]\n", [(4, "P004")]),
+        ("--[==[\nA leveled block.\n]==]\n", []),
+        ("--[[ prose: ignore\nlocal commented = out(code)\n]]\n", []),
+        ("--[[\nSummary.\n\nUsage:\n    luajit tool.lua FILE\n]]\n", []),
+        ("-- Before a block.\n--[[ Inside it. ]]\n-- After it.\n", []),
+    ],
+)
+def test_lua_comments(source: str, expected: list[tuple[int, str]]) -> None:
+    assert codes("m.lua", source) == expected
+
+
+def test_lua_comment_blocks_split_on_column_change() -> None:
+    source = (
+        "local function f()\n\t-- Indented sentence.\nend\n-- Top level sentence.\n"
+    )
+    assert codes("m.lua", source) == []
+
+
+def test_lua_line_numbers_count_lines_inside_long_strings() -> None:
+    source = 'local s = [[\na\nb\n]]\nlocal t = "x"\n-- No period\n'
+    assert codes("m.lua", source) == [(6, "P004")]
+
+
+def test_lua_em_dash_limit_is_configurable() -> None:
+    config = ProseConfig(lua_max_em_dashes=1)
+    assert codes("m.lua", "-- One — dash is fine.\n", config) == []
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
         ("A full sentence.\n", []),
         ("Wrapped across\ntwo lines.\n", [(1, "P003")]),
         ("No period\n", [(1, "P004")]),
