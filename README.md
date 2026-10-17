@@ -120,7 +120,7 @@ The baseline is PEP 8 as enforced by ruff, with these deliberate choices:
 * Type annotations on every function signature, including private ones.
 * `pathlib.Path` instead of `os.path`.
 * Specific exceptions only. Keep the cause with `raise NewError(...) from err`, and never silence `Exception`.
-* Keyword-only flags and options, declared after `*`, so a call reads `play(track, loop=True)` instead of `play(track, True)`.
+* Keyword-only flags and options, declared after `*`, so a call reads `save(path, overwrite=True)` instead of `save(path, True)`.
 * mypy's `None` analysis is part of the design. Do not silence it with `# type: ignore` or `cast()` unless an invariant guarantees the type, and return an empty collection instead of `None` when "nothing" is the answer.
 * No blocking I/O or heavy computation directly in async code, because it stalls the event loop. Run it with `asyncio.to_thread`.
 * A regular expression that is not trivial gets a name as a module constant and tests for its edge cases. Use string methods when they are clearer.
@@ -132,14 +132,14 @@ A `[lint.per-file-ignores]` table replaces the baseline's table, which drops its
 
 ## Lua conventions
 
-The baseline is LuaJIT 2.1, the Lua that game engines such as Darktide's embed, checked by luacheck, with these deliberate choices:
+The baseline is LuaJIT 2.1, the Lua that many host applications such as game engines embed, checked by luacheck, with these deliberate choices:
 
-* Indent with tabs, as the canonical `.editorconfig` sets, because the game and its mod framework do.
+* Indent with tabs, as the canonical `.editorconfig` sets, so code that extends a host matches the host's own Lua.
 * `std = "luajit"` in `.luacheckrc`, with the host's globals listed as `read_globals`, so a typo in a global name fails the check.
 * Every variable and function is `local`, and each module returns one table.
-* Code that runs in a host's shared Lua state, such as a game mod, prefixes every name it adds there, including ffi declarations, so it cannot collide with another mod.
+* Code that runs in a host's shared Lua state, such as a game mod or a plugin, prefixes every name it adds there, including ffi declarations, so it cannot collide with other code in that state.
 * Specs run under plain LuaJIT with a small runner and fakes for the host, so they need no third-party packages.
-* A setting or option a player can change is read where it is used, so a change applies without a restart.
+* A setting that a user can change is read where it is used, so a change applies without a restart.
 
 ## Commit messages
 
@@ -180,8 +180,8 @@ markdown-max-em-dashes = 1    # Per Markdown paragraph or list item.
 skip = [".gitattributes"]     # Shared files this repository opts out of.
 
 [tool.dev-standards.template]
-package = "media_api"         # Replaces {package} in template manifest paths.
-ignore = ["cogs/help.py"]     # Manifest paths this repository deliberately diverges on.
+package = "my_service"        # Replaces {package} in template manifest paths.
+ignore = ["Dockerfile"]       # Manifest paths this repository deliberately diverges on.
 ```
 
 The same settings for a Lua repository, in `dev-standards.toml`:
@@ -209,11 +209,11 @@ An `.editorconfig` that an older version wrote as a whole managed file is replac
 
 ## Checking template drift
 
-The bot and API templates list their shared core files in `.template-manifest.toml`.
+A template repository lists the core files that every repository made from it shares in `.template-manifest.toml`.
 From a derived repository, compare it with its template:
 
 ```bash
-uvx --from git+https://github.com/Lempki/dev-standards@v0.5.1 dev-standards template-check --template ../discord-bot-template --diff
+uvx --from git+https://github.com/Lempki/dev-standards@v0.5.1 dev-standards template-check --template ../my-template --diff
 ```
 
 Pass `--apply` to overwrite drifted files with the template copy, then review the result with `git diff`.
@@ -288,7 +288,7 @@ jobs:
       packages: write
 ```
 
-The image is named after the repository, such as `ghcr.io/lempki/api-media`.
+The image is named after the repository, such as `ghcr.io/<owner>/<repository>`.
 Tag `v1.2.0` publishes the tags `1.2.0`, `1.2`, and `latest`.
 A machine that runs the release pulls `latest`, so it gets the newest release without knowing its number.
 The image carries the version in its `org.opencontainers.image.version` label.

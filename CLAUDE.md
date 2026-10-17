@@ -1,6 +1,6 @@
 # dev-standards
 
-This repository is the single source of the conventions shared by the Discord bots, the api-* services, their templates, and the Lua mods.
+This repository is the single source of the conventions, hooks, and reusable workflows that the repositories using it share.
 Read `README.md` first, because it is the rulebook that every other repository points to.
 
 ## Layout

@@ -49,7 +49,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install --yes --no-install-recommends lua-check
       - run: luacheck ${{ inputs.luacheck-paths }}
 
-  # Ubuntu's LuaJIT is 2.1, the version game engines such as Darktide's embed.
+  # Ubuntu's LuaJIT is 2.1, the version that host applications such as game engines embed.
   test:
     if: ${{ inputs.test-command != '' }}
     runs-on: ubuntu-24.04

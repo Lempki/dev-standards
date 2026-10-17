@@ -1,6 +1,6 @@
 # Reusable workflow that publishes a repository's Docker image to the GitHub Container Registry.
 # Callers run it when a version tag such as v1.2.0 is pushed. See the README for an example caller.
-# The image is named after the repository, such as ghcr.io/lempki/api-media.
+# The image is named after the repository, such as ghcr.io/<owner>/<repository>.
 # It gets the tags 1.2.0, 1.2, and latest, so a machine that pulls latest gets the newest release.
 
 name: Docker publish

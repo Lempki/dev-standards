@@ -1,3 +1,3 @@
 [*.lua]
-# Darktide and its mod framework indent their Lua with tabs, so mod code matches the code it hooks.
+# Lua that extends a host application indents with tabs, so it matches the host's own code.
 indent_style = tab

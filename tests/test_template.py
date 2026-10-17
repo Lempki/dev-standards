@@ -27,10 +27,10 @@ def repos(tmp_path: Path) -> tuple[Path, Path]:
     write(template / "src/api_template/auth.py", "AUTH = 1\n")
     write(
         derived / "pyproject.toml",
-        '[tool.dev-standards.template]\npackage = "media_api"\n',
+        '[tool.dev-standards.template]\npackage = "my_service"\n',
     )
     write(derived / "utils/db.py", "DB = 1\n")
-    write(derived / "src/media_api/auth.py", "AUTH = 2\n")
+    write(derived / "src/my_service/auth.py", "AUTH = 2\n")
     return template, derived
 
 
@@ -69,7 +69,7 @@ def test_ignored_paths_are_not_drift(repos: tuple[Path, Path]) -> None:
     template, derived = repos
     write(
         derived / "pyproject.toml",
-        '[tool.dev-standards.template]\npackage = "media_api"\n'
+        '[tool.dev-standards.template]\npackage = "my_service"\n'
         'ignore = ["src/{package}/auth.py"]\n',
     )
     result = states(check_template(template, derived, apply=False))
@@ -102,7 +102,7 @@ def test_cli_exit_codes(repos: tuple[Path, Path]) -> None:
         main(["template-check", "--template", str(template), "--derived", str(derived)])
         == 1
     )
-    write(derived / "src/media_api/auth.py", "AUTH = 1\n")
+    write(derived / "src/my_service/auth.py", "AUTH = 1\n")
     assert (
         main(["template-check", "--template", str(template), "--derived", str(derived)])
         == 0
