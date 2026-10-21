@@ -64,10 +64,12 @@ jobs:
       - run: uv run pytest
 
   # The tests run on a newer Python too, so an upgrade's breakage shows up before the upgrade.
+  # A failure only warns, because a dependency may not support the newer Python yet.
   test-forward:
     if: ${{ inputs.forward-python-version != '' }}
     name: test (Python ${{ inputs.forward-python-version }})
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
         with:

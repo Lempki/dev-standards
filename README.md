@@ -245,7 +245,7 @@ jobs:
 | Input | Default | Effect |
 |---|---|---|
 | `python-version` | `3.14` | The Python version used by every job. |
-| `forward-python-version` | Empty | Adds a job that runs the tests on this newer Python. It warns about an upgrade's breakage before the upgrade. |
+| `forward-python-version` | Empty | Adds a job that runs the tests on this newer Python. It warns about an upgrade's breakage before the upgrade, and its failure does not fail the run. |
 | `mypy` | `false` | Adds a `typecheck` job that runs mypy on `mypy-target`. |
 | `mypy-target` | `src` | The path mypy checks. |
 | `docker` | `false` | Adds a `docker` job that builds the image without pushing it. |
