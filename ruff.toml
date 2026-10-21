@@ -1,4 +1,6 @@
 extend = ".ruff-base.toml"
+# The hooks run on the Python that installs them, which may be older than the shared target.
+target-version = "py312"
 
 [lint.isort]
 known-first-party = ["dev_standards"]

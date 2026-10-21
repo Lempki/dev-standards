@@ -15,4 +15,4 @@ jobs:
     uses: ./.github/workflows/python-ci.yml
     with:
       mypy: true
-      forward-python-version: "3.14"
+      forward-python-version: "3.15"

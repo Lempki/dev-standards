@@ -113,7 +113,7 @@ In Markdown, put `<!-- prose: ignore -->` on the line before the paragraph.
 
 The baseline is PEP 8 as enforced by ruff, with these deliberate choices:
 
-* Python 3.12 everywhere, matching the Docker images.
+* Python 3.14 everywhere, matching the Docker images. Files under `scripts/` stay compatible with Python 3.12, because they run on the host's own Python.
 * Line length 88 for the formatter. The linter only rejects lines longer than 100 characters, because comments and docstrings are never wrapped mid-sentence.
 * Double quotes, `X | None` instead of `Optional[X]`, and f-strings for formatting.
 * Google-style docstrings on every public module, class, and function.
@@ -239,12 +239,12 @@ jobs:
     with:
       mypy: true
       docker: true
-      forward-python-version: "3.14"
+      forward-python-version: "3.15"
 ```
 
 | Input | Default | Effect |
 |---|---|---|
-| `python-version` | `3.12` | The Python version used by every job. |
+| `python-version` | `3.14` | The Python version used by every job. |
 | `forward-python-version` | Empty | Adds a job that runs the tests on this newer Python. It warns about an upgrade's breakage before the upgrade. |
 | `mypy` | `false` | Adds a `typecheck` job that runs mypy on `mypy-target`. |
 | `mypy-target` | `src` | The path mypy checks. |

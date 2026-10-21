@@ -9,7 +9,7 @@ on:
       python-version:
         description: The Python version used by every job.
         type: string
-        default: "3.12"
+        default: "3.14"
       forward-python-version:
         description: A newer Python version that runs the tests once more. Empty skips it.
         type: string
