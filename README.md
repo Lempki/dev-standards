@@ -146,6 +146,7 @@ The baseline is LuaJIT 2.1, the Lua that many host applications such as game eng
 Commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) with a scope where one fits.
 The subject is imperative, lowercase, and has no trailing period.
 The body follows the prose rules above, with one sentence per line.
+Mention issues as "Part of #N", never "Closes #N", because a push to main would close them before the release ships. Shipped issues are closed by hand at release time.
 
 ## Using the hooks
 
