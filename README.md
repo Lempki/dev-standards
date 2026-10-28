@@ -154,7 +154,7 @@ Add this to a repository's `.pre-commit-config.yaml`:
 
 ```yaml
 - repo: https://github.com/Lempki/dev-standards
-  rev: v0.6.1
+  rev: v0.7.0
   hooks:
     - id: sync-files
     - id: check-prose
@@ -214,7 +214,7 @@ A template repository lists the core files that every repository made from it sh
 From a derived repository, compare it with its template:
 
 ```bash
-uvx --from git+https://github.com/Lempki/dev-standards@v0.6.1 dev-standards template-check --template ../my-template --diff
+uvx --from git+https://github.com/Lempki/dev-standards@v0.7.0 dev-standards template-check --template ../my-template --diff
 ```
 
 Pass `--apply` to overwrite drifted files with the template copy, then review the result with `git diff`.
@@ -236,7 +236,7 @@ on:
 
 jobs:
   ci:
-    uses: Lempki/dev-standards/.github/workflows/python-ci.yml@v0.6.1
+    uses: Lempki/dev-standards/.github/workflows/python-ci.yml@v0.7.0
     with:
       mypy: true
       docker: true
@@ -259,7 +259,7 @@ A Lua repository calls `lua-ci.yml` instead:
 ```yaml
 jobs:
   ci:
-    uses: Lempki/dev-standards/.github/workflows/lua-ci.yml@v0.6.1
+    uses: Lempki/dev-standards/.github/workflows/lua-ci.yml@v0.7.0
     with:
       test-command: luajit tests/run.lua
 ```
@@ -285,7 +285,7 @@ on:
 
 jobs:
   image:
-    uses: Lempki/dev-standards/.github/workflows/docker-publish.yml@v0.6.1
+    uses: Lempki/dev-standards/.github/workflows/docker-publish.yml@v0.7.0
     permissions:
       contents: read
       packages: write
