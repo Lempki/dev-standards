@@ -240,6 +240,7 @@ jobs:
     with:
       mypy: true
       docker: true
+      smoke-test: .github/smoke-test.sh
       forward-python-version: "3.15"
 ```
 
@@ -250,6 +251,7 @@ jobs:
 | `mypy` | `false` | Adds a `typecheck` job that runs mypy on `mypy-target`. |
 | `mypy-target` | `src` | The path mypy checks. |
 | `docker` | `false` | Adds a `docker` job that builds the image without pushing it. |
+| `smoke-test` | Empty | A script in the repository, such as `.github/smoke-test.sh`, that the `docker` job runs with the built image's name. It starts the image and fails when the program inside cannot start, which a build alone never shows. |
 | `lfs` | `false` | Checks out Git LFS files. Leave it off unless tests need real assets. |
 
 A Lua repository calls `lua-ci.yml` instead:

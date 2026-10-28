@@ -26,6 +26,10 @@ on:
         description: Whether to build the Docker image.
         type: boolean
         default: false
+      smoke-test:
+        description: A script in the repository that gets the built image's name and checks that it starts. Empty skips it.
+        type: string
+        default: ""
       lfs:
         description: Whether to check out Git LFS files.
         type: boolean
@@ -105,5 +109,14 @@ jobs:
         with:
           context: .
           push: false
+          # The smoke test needs the image in the local Docker, which a plain build leaves in the cache.
+          load: ${{ inputs.smoke-test != '' }}
+          tags: smoke-test:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      # A build passes even when the program inside the image cannot start, such as after a base image change.
+      - name: Start the image
+        if: ${{ inputs.smoke-test != '' }}
+        env:
+          SMOKE_TEST: ${{ inputs.smoke-test }}
+        run: bash "$SMOKE_TEST" smoke-test:ci
