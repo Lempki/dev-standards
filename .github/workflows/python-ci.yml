@@ -39,22 +39,9 @@ permissions:
   contents: read
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          lfs: ${{ inputs.lfs }}
-      - uses: astral-sh/setup-uv@v10.3.0
-        with:
-          python-version: ${{ inputs.python-version }}
-      - uses: actions/cache@v6
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
-      - run: uvx pre-commit run --all-files --show-diff-on-failure
-
-  test:
+  # One job runs every check, because GitHub bills each job of a private repository by the minute, rounded up.
+  # Separate jobs would each install the project again and round up again.
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -64,13 +51,25 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
           enable-cache: true
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Lint
+        run: uvx pre-commit run --all-files --show-diff-on-failure
       - run: uv sync --frozen
-      - run: uv run pytest
+      - name: Test
+        run: uv run pytest
+      - name: Typecheck
+        if: ${{ inputs.mypy }}
+        run: uv run mypy ${{ inputs.mypy-target }}
 
   # The tests run on a newer Python too, so an upgrade's breakage shows up before the upgrade.
   # A failure only warns, because a dependency may not support the newer Python yet.
+  # Only public repositories run it, where Actions minutes are free.
+  # A private repository shares its dependencies with a public template, which warns as early.
   test-forward:
-    if: ${{ inputs.forward-python-version != '' }}
+    if: ${{ inputs.forward-python-version != '' && !github.event.repository.private }}
     name: test (Python ${{ inputs.forward-python-version }})
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -84,18 +83,6 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen
       - run: uv run pytest
-
-  typecheck:
-    if: ${{ inputs.mypy }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.3.0
-        with:
-          python-version: ${{ inputs.python-version }}
-          enable-cache: true
-      - run: uv sync --frozen
-      - run: uv run mypy ${{ inputs.mypy-target }}
 
   docker:
     if: ${{ inputs.docker }}

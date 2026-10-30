@@ -223,7 +223,10 @@ The command exits with 1 while any file has drifted, so it also works as a CI ga
 
 ## Using the reusable workflow
 
-A repository's `.github/workflows/ci.yml` only needs to call the shared workflow:
+A repository's `.github/workflows/ci.yml` only needs to call the shared workflow.
+Its `checks` job runs the pre-commit hooks, the tests, and mypy one after another.
+One job saves Actions minutes in a private repository, because GitHub rounds each job up to a whole minute.
+
 
 ```yaml
 name: CI
@@ -247,8 +250,8 @@ jobs:
 | Input | Default | Effect |
 |---|---|---|
 | `python-version` | `3.14` | The Python version used by every job. |
-| `forward-python-version` | Empty | Adds a job that runs the tests on this newer Python. It warns about an upgrade's breakage before the upgrade, and its failure does not fail the run. |
-| `mypy` | `false` | Adds a `typecheck` job that runs mypy on `mypy-target`. |
+| `forward-python-version` | Empty | Adds a job that runs the tests on this newer Python. It warns about an upgrade's breakage before the upgrade, and its failure does not fail the run. It runs only in a public repository, where Actions minutes are free. |
+| `mypy` | `false` | Adds a step to the `checks` job that runs mypy on `mypy-target`. |
 | `mypy-target` | `src` | The path mypy checks. |
 | `docker` | `false` | Adds a `docker` job that builds the image without pushing it. |
 | `smoke-test` | Empty | A script in the repository, such as `.github/smoke-test.sh`, that the `docker` job runs with the built image's name. It starts the image and fails when the program inside cannot start, which a build alone never shows. |
@@ -270,7 +273,7 @@ jobs:
 | `luacheck-paths` | `.` | The paths luacheck checks, with the repository's `.luacheckrc`. |
 | `lfs` | `false` | Checks out Git LFS files. |
 
-The `lint` job runs the repository's pre-commit hooks, as in `python-ci.yml`.
+The `lint` job runs the repository's pre-commit hooks, as the `checks` job of `python-ci.yml` does.
 
 ## Publishing Docker images
 
