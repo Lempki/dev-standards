@@ -24,6 +24,9 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # A publish takes about 5 minutes, and an arm64 build under QEMU with an empty cache takes several times as long.
+    # Without a timeout, a hung build or push holds the release for 6 hours before GitHub cancels it.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
         with:

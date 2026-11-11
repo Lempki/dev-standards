@@ -25,9 +25,13 @@ on:
 permissions:
   contents: read
 
+# Each job takes under a minute, so a job past its timeout has hung, as when an Ubuntu mirror stops answering apt-get.
+# Without a timeout, GitHub waits 6 hours before it cancels a job.
+
 jobs:
   lint:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
         with:
@@ -42,6 +46,7 @@ jobs:
 
   luacheck:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
         with:
@@ -53,6 +58,7 @@ jobs:
   test:
     if: ${{ inputs.test-command != '' }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
         with:

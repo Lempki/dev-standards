@@ -38,11 +38,15 @@ on:
 permissions:
   contents: read
 
+# Each job takes a few minutes at most, so a job past its timeout has hung, as when a download stops answering.
+# Without a timeout, GitHub waits 6 hours before it cancels a job, and a private repository is billed for every minute.
+
 jobs:
   # One job runs every check, because GitHub bills each job of a private repository by the minute, rounded up.
   # Separate jobs would each install the project again and round up again.
   checks:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
@@ -72,6 +76,7 @@ jobs:
     if: ${{ inputs.forward-python-version != '' && !github.event.repository.private }}
     name: test (Python ${{ inputs.forward-python-version }})
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     continue-on-error: true
     steps:
       - uses: actions/checkout@v7
@@ -87,6 +92,8 @@ jobs:
   docker:
     if: ${{ inputs.docker }}
     runs-on: ubuntu-latest
+    # A build with an empty cache takes longer than one that reuses its layers.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
         with:
